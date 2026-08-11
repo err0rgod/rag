@@ -58,7 +58,7 @@ query_embedding = model.encode(query, normalize_embeddings=True)
 
 # calculate cosine similarity
 scores =  chunk_embeddings @ query_embedding
-print(scores)
+# print(scores)
 
 # return top k chunks
 top_k = 10
@@ -71,10 +71,6 @@ for idx in top_indices:
 
 # api deepseek call
 
-
-
-
-
 for chunk in completion(
     model="deepseek/deepseek-v4-flash",
     messages=[
@@ -83,6 +79,6 @@ for chunk in completion(
         {"role": "user", "content": query}
     ],
     stream=True,
-    max_completions_tokens=500
+    max_tokens=500
 ):
-    print(chunk.choices[0].delta.content or "", end="")
+    print(chunk.choices[0].delta.content or "API not working properly.")
