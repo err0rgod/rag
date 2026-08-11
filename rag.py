@@ -81,4 +81,5 @@ for chunk in completion(
     stream=True,
     max_tokens=500
 ):
-    print(chunk.choices[0].delta.content or "API not working properly.")
+    print(chunk.choices[0].delta.content or "", end="")
+print("\n")
