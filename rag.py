@@ -67,7 +67,6 @@ rag_context = ""
 for idx in top_indices:
     rag_context += (all_chunks[idx])
     rag_context += "\n\n"
-print(rag_context)
 
 
 # api deepseek call
@@ -84,6 +83,6 @@ for chunk in completion(
         {"role": "user", "content": query}
     ],
     stream=True,
-    max_completions_tokens=300
+    max_completions_tokens=500
 ):
     print(chunk.choices[0].delta.content or "", end="")
