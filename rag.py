@@ -79,7 +79,7 @@ for chunk in completion(
         {"role": "user", "content": query}
     ],
     stream=True,
-    max_tokens=500
+    max_tokens=1000
 ):
     print(chunk.choices[0].delta.content or "", end="")
 print("\n")
