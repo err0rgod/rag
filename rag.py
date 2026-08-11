@@ -7,10 +7,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+os.environ["DEEPSEEK_API_KEY"] = os.getenv("DEEPSEEK_API_KEY")
+os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN")
+
 docs_path = snapshot_download(
     repo_id="err0rgod/indian_const",
-    repo_type="dataset",
-    # local_dir="/content/semantic-search-pdf"
+    repo_type="dataset"
 )
 
 print("Documents downloaded to:", docs_path)
@@ -72,7 +74,7 @@ print(rag_context)
 
 
 
-os.environ["DEEPSEEK_API_KEY"] = os.getenv("DEEPSEEK_API_KEY")
+
 
 for chunk in completion(
     model="deepseek/deepseek-v4-flash",
@@ -82,6 +84,6 @@ for chunk in completion(
         {"role": "user", "content": query}
     ],
     stream=True,
-    max_tokens=300
+    max_completions_tokens=300
 ):
     print(chunk.choices[0].delta.content or "", end="")
