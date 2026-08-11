@@ -52,7 +52,7 @@ def embed_data():
 
     chunk_embeddings = model.encode(all_chunks, normalize_embeddings=True)
     print(chunk_embeddings.shape)
-
+    return chunk_embeddings
     while(True):
         query = input("Enter your query? ")
         query_embedding = model.encode(query, normalize_embeddings=True)
