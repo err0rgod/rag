@@ -75,12 +75,11 @@ def embed_data():
         for chunk in completion(
             model="deepseek/deepseek-v4-flash",
             messages=[
-                {"role": "system", "content": "You are a Legal assistant for indian system you will be given some data from the indian constitution related with the user's query. you have to give response in simple text no markdown format."},
+                {"role": "system", "content": "You are a Legal assistant for indian system you will be given some data from the indian constitution related with the user's query. you have to give response in simple text no markdown format. add a simple one line summary and example where needed"},
                 {"role": "system", "content": f"Given additional info: {rag_context}"},
                 {"role": "user", "content": query}
             ],
-            stream=True,
-            max_tokens=1000
+            stream=True
         ):
             print(chunk.choices[0].delta.content or "", end="")
         print("\n")
