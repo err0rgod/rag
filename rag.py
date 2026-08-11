@@ -72,18 +72,18 @@ def embed_data():
 
     # api deepseek call
 
-    for chunk in completion(
-        model="deepseek/deepseek-v4-flash",
-        messages=[
-            {"role": "system", "content": "You are a Legal assistant for indian system you will be given some data from the indian constitution related with the user's query. you have to give response in simple text no markdown format."},
-            {"role": "system", "content": f"Given additional info: {rag_context}"},
-            {"role": "user", "content": query}
-        ],
-        stream=True,
-        max_tokens=1000
-    ):
-        print(chunk.choices[0].delta.content or "", end="")
-    print("\n")
+        for chunk in completion(
+            model="deepseek/deepseek-v4-flash",
+            messages=[
+                {"role": "system", "content": "You are a Legal assistant for indian system you will be given some data from the indian constitution related with the user's query. you have to give response in simple text no markdown format."},
+                {"role": "system", "content": f"Given additional info: {rag_context}"},
+                {"role": "user", "content": query}
+            ],
+            stream=True,
+            max_tokens=1000
+        ):
+            print(chunk.choices[0].delta.content or "", end="")
+        print("\n")
 
 if __name__ == "__main__":
    embed_data()
