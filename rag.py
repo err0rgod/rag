@@ -53,7 +53,7 @@ print(chunk_embeddings.shape)
 
 
 # take user input and convert into embeddings
-query = "What does article 21 gurantees?"
+query = input("Enter your query? ")
 query_embedding = model.encode(query, normalize_embeddings=True)
 
 # calculate cosine similarity
