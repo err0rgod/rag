@@ -10,7 +10,7 @@ load_dotenv()
 docs_path = snapshot_download(
     repo_id="err0rgod/indian_const",
     repo_type="dataset",
-    local_dir="/content/semantic-search-pdf"
+    # local_dir="/content/semantic-search-pdf"
 )
 
 print("Documents downloaded to:", docs_path)
@@ -59,7 +59,6 @@ scores =  chunk_embeddings @ query_embedding
 print(scores)
 
 # return top k chunks
-import numpy as np
 top_k = 10
 top_indices = np.argsort(-scores)[:top_k]   # sort descending, take top 3
 rag_context = ""
