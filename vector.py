@@ -21,12 +21,6 @@ if not client.collection_exists(collection_name="indian_constitution"):
 
 points = []
 
-
-
-
-
-
-
 for i, (chunk, embedding) in enumerate(zip(chunks, chunk_embedings)):
     points.append(
         PointStruct(
