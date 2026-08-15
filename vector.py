@@ -10,6 +10,13 @@ vector_size = len(chunk_embedings[0])
 
 print(vector_size)
 
+
+
+
+
+
+
+
 if not client.collection_exists(collection_name="indian_constitution"):
     client.create_collection(
         collection_name="indian_constitution",
