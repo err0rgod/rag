@@ -10,13 +10,6 @@ vector_size = len(chunk_embedings[0])
 
 print(vector_size)
 
-
-
-
-
-
-
-
 if not client.collection_exists(collection_name="indian_constitution"):
     client.create_collection(
         collection_name="indian_constitution",
@@ -27,6 +20,12 @@ if not client.collection_exists(collection_name="indian_constitution"):
     )
 
 points = []
+
+
+
+
+
+
 
 for i, (chunk, embedding) in enumerate(zip(chunks, chunk_embedings)):
     points.append(
