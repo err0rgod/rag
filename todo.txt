@@ -1,0 +1,4 @@
+- [ ] Build The Data Pipeline
+- [ ] Add Chat Memory (Context)
+- [ ] Build a Web UI
+- [ ] Improve Search (Reranking)
