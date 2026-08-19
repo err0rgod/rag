@@ -22,12 +22,12 @@ def chat():
     client = QdrantClient(path="./qdrant_db")
 
     # user cat loop 
+    chat_history =""
     try:
         while(True):
-            chat_history =""
             user_query = input("Enter your query: ")
             chat_history += "User: "
-            chat_history += user_query
+            chat_history += user_query + "\n"
 
             query_embedding = model.encode(user_query, normalize_embeddings=True).tolist()
             # calculate cosine sim
@@ -52,7 +52,7 @@ def chat():
                Model_response += chunk.choices[0].delta.content or ""
             print("\n")
             chat_history += "Model : "
-            chat_history += Model_response
+            chat_history += Model_response + "\n\n"
     except KeyboardInterrupt:
         print("\n\n Force Quiting... Goodbye")
 
