@@ -1,5 +1,5 @@
 from huggingface_hub import snapshot_download
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 import glob
 import os
 import fitz
@@ -32,7 +32,11 @@ def chunk_text(text, chunk_size=150,overlap=20):
 
 
 def embed_data():
-    model = SentenceTransformer("all-MiniLM-L6-v2")
+    model = TextEmbedding(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        cache_dir="./fastembed_cache",
+        threads=1,
+    )
     DATA_PATH = data_load()
     all_chunks =[]
     metadata = []
@@ -47,8 +51,8 @@ def embed_data():
             all_chunks.append(chunk)
             metadata.append({"source":filepath, "chunk_index":i})
 
-    chunk_embeddings = model.encode(all_chunks, normalize_embeddings=True)
-    print(chunk_embeddings.shape)
+    chunk_embeddings = list(model.embed(all_chunks))
+    print((len(chunk_embeddings), len(chunk_embeddings[0]) if chunk_embeddings else 0))
     return chunk_embeddings,all_chunks
 
 

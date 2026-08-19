@@ -4,7 +4,7 @@ import os
 import uvicorn
 from litellm import completion
 from dotenv import load_dotenv
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 from pydantic import BaseModel
@@ -23,8 +23,11 @@ app = FastAPI()
 
 # Load Models
 print("Loading Embedding Model...")
-model_path = "./embedding_model" if os.path.isdir("./embedding_model") else "all-MiniLM-L6-v2"
-model = SentenceTransformer(model_path)
+model = TextEmbedding(
+    model_name="sentence-transformers/all-MiniLM-L6-v2",
+    cache_dir="./fastembed_cache",
+    threads=1,
+)
 client = QdrantClient(path="./qdrant_db")
 if not client.collection_exists(collection_name="indian_constitution"):
     client.create_collection(
@@ -64,12 +67,11 @@ async def upload_pdf(file: UploadFile = File(...)):
     
     # 3. Embed and save to Qdrant using random UUIDs so we don't overwrite the constitution!
     points = []
-    for chunk in chunks:
-        embedding = model.encode(chunk, normalize_embeddings=True).tolist()
+    for chunk, embedding in zip(chunks, model.embed(chunks)):
         points.append(
             PointStruct(
                 id=uuid.uuid4().hex,  # Random ID 
-                vector=embedding,
+                vector=embedding.tolist(),
                 payload={"text": chunk, "source": file.filename} # Save filename!
             )
         )
@@ -84,7 +86,7 @@ async def chat_endpoint(request: ChatRequest):
     user_query = request.query
     
     # 1. Search Database
-    query_embedding = model.encode(user_query, normalize_embeddings=True).tolist()
+    query_embedding = next(model.embed([user_query])).tolist()
     scores = client.query_points(collection_name='indian_constitution', query=query_embedding, limit=top_k)
     
     rag_context = ""

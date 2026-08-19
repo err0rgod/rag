@@ -4,7 +4,7 @@ import os
 import numpy as np
 from litellm import completion
 from dotenv import load_dotenv
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 from qdrant_client import QdrantClient
 
 
@@ -17,7 +17,11 @@ os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN")
 
 def chat():
     top_k = 10
-    model = SentenceTransformer("all-MiniLM-L6-v2")
+    model = TextEmbedding(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        cache_dir="./fastembed_cache",
+        threads=1,
+    )
 
     client = QdrantClient(path="./qdrant_db")
 
@@ -29,7 +33,7 @@ def chat():
             chat_history += "User: "
             chat_history += user_query + "\n"
 
-            query_embedding = model.encode(user_query, normalize_embeddings=True).tolist()
+            query_embedding = next(model.embed([user_query])).tolist()
             # calculate cosine sim
             scores = client.query_points(collection_name='indian_constitution', query=query_embedding,limit=top_k)
 
