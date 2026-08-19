@@ -6,7 +6,7 @@ from litellm import completion
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
-from qdrant_client.models import PointStruct
+from qdrant_client.models import Distance, PointStruct, VectorParams
 from pydantic import BaseModel
 from typing import List, Dict
 import fitz
@@ -14,8 +14,9 @@ import uuid
 
 # Load environment variables
 load_dotenv()
-os.environ["DEEPSEEK_API_KEY"] = os.getenv("DEEPSEEK_API_KEY")
-os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN")
+for key in ("DEEPSEEK_API_KEY", "HF_TOKEN"):
+    if value := os.getenv(key):
+        os.environ[key] = value
 
 # Initialize FastAPI App
 app = FastAPI()
@@ -24,6 +25,11 @@ app = FastAPI()
 print("Loading Embedding Model...")
 model = SentenceTransformer("all-MiniLM-L6-v2")
 client = QdrantClient(path="./qdrant_db")
+if not client.collection_exists(collection_name="indian_constitution"):
+    client.create_collection(
+        collection_name="indian_constitution",
+        vectors_config=VectorParams(size=384, distance=Distance.COSINE),
+    )
 print("Ready!")
 
 # ----------------- HELPER FUNCTIONS -----------------
@@ -112,5 +118,10 @@ async def get_index():
         return HTMLResponse(f.read())
 
 
+@app.get("/healthz")
+async def health_check():
+    return {"status": "ok"}
+
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8080")))
