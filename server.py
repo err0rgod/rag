@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import HTMLResponse
 import os
 import uvicorn
@@ -6,8 +6,11 @@ from litellm import completion
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
+from qdrant_client.models import PointStruct
 from pydantic import BaseModel
 from typing import List, Dict
+import fitz
+import uuid
 
 # Load environment variables
 load_dotenv()
@@ -23,38 +26,75 @@ model = SentenceTransformer("all-MiniLM-L6-v2")
 client = QdrantClient(path="./qdrant_db")
 print("Ready!")
 
-# Data structure to accept from frontend
+# ----------------- HELPER FUNCTIONS -----------------
+def chunk_text(text, chunk_size=150, overlap=20):
+    words = text.split()
+    chunks = []
+    step = chunk_size - overlap
+    for start in range(0, len(words), step):
+        chunk_words = words[start:start+chunk_size]
+        if not chunk_words: break
+        chunks.append(" ".join(chunk_words))
+        if start + chunk_size >= len(words): break
+    return chunks
+
 class ChatRequest(BaseModel):
     query: str
     history: List[Dict[str, str]]
+
+# ----------------- ENDPOINTS -----------------
+@app.post("/api/upload")
+async def upload_pdf(file: UploadFile = File(...)):
+    # 1. Read the uploaded PDF file directly from memory
+    content = await file.read()
+    doc = fitz.open(stream=content, filetype="pdf")
+    text = ""
+    for page in doc:
+        text += page.get_text()
+        
+    # 2. Chunk it using the exact same logic we used before
+    chunks = chunk_text(text)
+    
+    # 3. Embed and save to Qdrant using random UUIDs so we don't overwrite the constitution!
+    points = []
+    for chunk in chunks:
+        embedding = model.encode(chunk, normalize_embeddings=True).tolist()
+        points.append(
+            PointStruct(
+                id=uuid.uuid4().hex,  # Random ID 
+                vector=embedding,
+                payload={"text": chunk, "source": file.filename} # Save filename!
+            )
+        )
+        
+    client.upsert(collection_name='indian_constitution', points=points)
+    return {"message": f"Successfully processed {file.filename}!"}
+
 
 @app.post("/api/chat")
 async def chat_endpoint(request: ChatRequest):
     top_k = 10
     user_query = request.query
     
-    # 1. Embed and Search Qdrant
+    # 1. Search Database
     query_embedding = model.encode(user_query, normalize_embeddings=True).tolist()
     scores = client.query_points(collection_name='indian_constitution', query=query_embedding, limit=top_k)
     
     rag_context = ""
     for idx in scores.points:
-        rag_context += idx.payload["text"] + "\n\n"
+        rag_context += f"Source: {idx.payload.get('source', 'Unknown')}\n{idx.payload['text']}\n\n"
         
-    # 2. Build the messages list
+    # 2. Generalized System Prompt (Not just for Indian Constitution anymore!)
     messages = [
-        {"role": "system", "content": "You are a Legal assistant for indian system you will be given some data from the indian constitution related with the user's query. you have to give response in simple text no markdown format. add a simple one line summary and example where needed"},
-        {"role": "system", "content": f"Given additional info: {rag_context}"}
+        {"role": "system", "content": "You are a helpful AI Document Assistant. You will be given some data extracted from uploaded documents related to the user's query. Answer the query based ONLY on the provided context. If the context does not contain the answer, say so. Do not use markdown format. Add a simple one line summary and example where needed."},
+        {"role": "system", "content": f"Given additional info:\n{rag_context}"}
     ]
     
-    # 3. Add the chat history that the frontend sends us!
     for msg in request.history:
         messages.append(msg)
         
-    # 4. Add the current question
     messages.append({"role": "user", "content": user_query})
     
-    # 5. Call DeepSeek (No stream this time so it's easier for the frontend to read)
     try:
         response = completion(
             model="deepseek/deepseek-v4-flash",
@@ -65,11 +105,12 @@ async def chat_endpoint(request: ChatRequest):
     except Exception as e:
         return {"response": f"Network Error: {str(e)}"}
 
-# This function serves the HTML file when you go to localhost:8000
+
 @app.get("/")
 async def get_index():
     with open("index.html", "r", encoding="utf-8") as f:
         return HTMLResponse(f.read())
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8080)
