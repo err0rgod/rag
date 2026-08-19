@@ -23,7 +23,8 @@ app = FastAPI()
 
 # Load Models
 print("Loading Embedding Model...")
-model = SentenceTransformer("all-MiniLM-L6-v2")
+model_path = "./embedding_model" if os.path.isdir("./embedding_model") else "all-MiniLM-L6-v2"
+model = SentenceTransformer(model_path)
 client = QdrantClient(path="./qdrant_db")
 if not client.collection_exists(collection_name="indian_constitution"):
     client.create_collection(
